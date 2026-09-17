@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reading Olympics | Worldreader</title>
+  <style>
+    :root {
+      --navy:#073763;
+      --blue:#1466cc;
+      --sky:#eaf4ff;
+      --ink:#172033;
+      --muted:#667085;
+      --line:#e5e9f0;
+      --paper:#ffffff;
+      --bg:#f5f7fb;
+      --gold:#f4b400;
+      --silver:#aab4c0;
+      --bronze:#c87941;
+      --green:#1a8f5d;
+      --red:#b42318;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--bg); }
+    button, input, select { font:inherit; }
+    button { cursor:pointer; }
+    .topbar { background:var(--navy); color:#fff; padding:13px 24px; }
+    .topbar-inner { max-width:1180px; margin:auto; display:flex; align-items:center; justify-content:space-between; gap:18px; }
+    .brand { font-weight:800; letter-spacing:.2px; }
+    .brand span { font-weight:500; opacity:.76; margin-left:8px; }
+    .status { display:flex; align-items:center; gap:8px; font-size:13px; opacity:.92; }
+    .dot { width:9px; height:9px; border-radius:50%; background:#f6c453; box-shadow:0 0 0 4px rgba(255,255,255,.08); }
+    .dot.live { background:#41d18f; }
+    .dot.error { background:#ff7b72; }
+
+    .hero { background:linear-gradient(135deg,#0b4f93 0%,#0a3765 65%,#082b50 100%); color:#fff; }
+    .hero-inner { max-width:1180px; margin:auto; padding:42px 24px 38px; display:grid; grid-template-columns:1.3fr .7fr; gap:30px; align-items:end; }
+    .eyebrow { font-size:13px; text-transform:uppercase; letter-spacing:1.8px; font-weight:800; opacity:.75; }
+    h1 { margin:8px 0 10px; font-size:clamp(34px,5vw,62px); line-height:.98; letter-spacing:-2px; }
+    .hero p { margin:0; max-width:690px; font-size:17px; line-height:1.55; color:rgba(255,255,255,.84); }
+    .hero-badge { justify-self:end; text-align:right; }
+    .hero-badge .medals { font-size:42px; letter-spacing:6px; }
+    .hero-badge small { display:block; margin-top:8px; color:rgba(255,255,255,.72); }
+
+    main { max-width:1180px; margin:-1px auto 60px; padding:24px; }
+    .toolbar { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px; }
+    .tabs { display:flex; gap:6px; padding:4px; background:#e9edf4; border-radius:12px; }
+    .tab { border:0; background:transparent; color:#566175; padding:9px 14px; border-radius:9px; font-weight:750; }
+    .tab.active { background:#fff; color:var(--navy); box-shadow:0 1px 4px rgba(16,24,40,.12); }
+    .actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .btn { border:1px solid #ccd4df; border-radius:10px; background:#fff; color:var(--ink); padding:9px 12px; font-weight:700; }
+    .btn.primary { background:var(--blue); color:#fff; border-color:var(--blue); }
+    .btn:disabled { opacity:.55; cursor:not-allowed; }
+
+    .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px; }
+    .metric { background:#fff; border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 5px 18px rgba(16,24,40,.04); }
+    .metric-label { color:var(--muted); font-size:13px; font-weight:700; }
+    .metric-value { margin-top:4px; font-size:31px; font-weight:850; letter-spacing:-1px; }
+    .metric-foot { margin-top:4px; color:#8b95a5; font-size:12px; }
+
+    .podium { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; align-items:end; margin:0 0 18px; }
+    .podium-card { position:relative; overflow:hidden; background:#fff; border:1px solid var(--line); border-radius:18px; padding:22px; min-height:150px; box-shadow:0 6px 22px rgba(16,24,40,.05); }
+    .podium-card.first { min-height:174px; border-top:5px solid var(--gold); }
+    .podium-card.second { border-top:5px solid var(--silver); }
+    .podium-card.third { border-top:5px solid var(--bronze); }
+    .place { position:absolute; top:14px; right:16px; font-weight:900; font-size:26px; color:#c6ccd5; }
+    .podium-country { display:flex; gap:11px; align-items:center; margin-top:18px; }
+    .flag { font-size:30px; width:38px; text-align:center; }
+    .country-name { font-size:20px; font-weight:850; }
+    .country-code { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+    .score-big { margin-top:14px; font-size:29px; font-weight:900; color:var(--navy); }
+    .score-big span { font-size:13px; font-weight:700; color:var(--muted); }
+
+    .panel { background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:0 5px 18px rgba(16,24,40,.04); overflow:hidden; }
+    .panel-head { padding:18px 20px; display:flex; gap:14px; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); }
+    .panel-head h2 { margin:0; font-size:18px; }
+    .panel-head p { margin:2px 0 0; color:var(--muted); font-size:13px; }
+    .filters { display:flex; gap:8px; flex-wrap:wrap; }
+    select { border:1px solid #ccd4df; border-radius:9px; padding:8px 10px; background:#fff; color:var(--ink); }
+    .table-wrap { overflow:auto; }
+    table { width:100%; border-collapse:collapse; min-width:760px; }
+    th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.8px; color:#8791a2; padding:11px 20px; background:#fafbfc; border-bottom:1px solid var(--line); }
+    td { padding:14px 20px; border-bottom:1px solid #eef1f5; font-size:14px; }
+    tr:last-child td { border-bottom:0; }
+    .rank { font-weight:900; color:#8893a2; width:48px; }
+    .country-cell { display:flex; align-items:center; gap:10px; font-weight:800; }
+    .bar { height:7px; width:110px; background:#e8edf4; border-radius:999px; overflow:hidden; display:inline-block; margin-right:8px; vertical-align:middle; }
+    .bar > i { display:block; height:100%; background:var(--blue); border-radius:999px; }
+    .positive { color:var(--green); font-weight:800; }
+    .muted { color:var(--muted); }
+
+    .view { display:none; }
+    .view.active { display:block; }
+    .rules { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .rule-card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px; }
+    .rule-card h3 { margin:0 0 8px; color:var(--navy); }
+    .rule-card p, .rule-card li { color:#586477; line-height:1.55; }
+    .formula { background:var(--sky); padding:12px 14px; border-radius:10px; color:#0a4e90; font-weight:800; margin-top:12px; }
+    .settings { margin-top:16px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .setting { background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; }
+    .setting label { display:block; color:var(--muted); font-size:12px; font-weight:800; margin-bottom:7px; }
+    .setting input { width:100%; border:1px solid #ccd4df; border-radius:9px; padding:8px 10px; }
+
+    .raw-controls { padding:16px; display:grid; grid-template-columns:1fr auto; gap:9px; border-bottom:1px solid var(--line); }
+    .raw-controls input { width:100%; border:1px solid #ccd4df; border-radius:9px; padding:10px 11px; }
+    .discover { padding:16px; display:grid; grid-template-columns:1fr 1fr auto; gap:9px; border-bottom:1px solid var(--line); background:#fafbfc; }
+    .discover input { width:100%; border:1px solid #ccd4df; border-radius:9px; padding:10px 11px; }
+    .discover-help { grid-column:1/-1; margin:0; color:var(--muted); font-size:13px; }
+    pre { margin:0; min-height:420px; max-height:680px; overflow:auto; background:#0f172a; color:#dbe7f5; padding:20px; line-height:1.48; font-size:13px; }
+    .notice { margin:0 0 18px; padding:12px 14px; border:1px solid #f1d8a3; border-radius:11px; background:#fff9e9; color:#775a13; font-size:13px; display:none; }
+    .notice.show { display:block; }
+
+    @media (max-width:850px) {
+      .hero-inner { grid-template-columns:1fr; }
+      .hero-badge { justify-self:start; text-align:left; }
+      .metrics { grid-template-columns:1fr 1fr; }
+      .podium { grid-template-columns:1fr; }
+      .podium-card.first { order:-1; }
+      .rules, .settings { grid-template-columns:1fr; }
+    }
+    @media (max-width:520px) {
+      .metrics { grid-template-columns:1fr; }
+      .topbar-inner { align-items:flex-start; flex-direction:column; }
+      main { padding:16px; }
+      .hero-inner { padding:34px 16px; }
+      .raw-controls, .discover { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">Worldreader <span>Reading Olympics</span></div>
+      <div class="status"><i id="statusDot" class="dot"></i><span id="statusText">Connecting to live challenge data…</span></div>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="eyebrow">Families reading together worldwide</div>
+        <h1>Reading Olympics</h1>
+        <p>Every finished book earns points for your country. Countries compete on average reading achievement so a small, committed team can stand alongside a large one.</p>
+      </div>
+      <div class="hero-badge">
+        <div class="medals">🥇 🥈 🥉</div>
+        <small>Live country challenge leaderboard</small>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <div id="notice" class="notice"></div>
+    <div class="toolbar">
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-view="leaderboard">Leaderboard</button>
+        <button class="tab" data-view="rules">How it works</button>
+        <button class="tab" data-view="raw">Raw data</button>
+      </div>
+      <div class="actions">
+        <button id="refreshBtn" class="btn primary">Refresh live data</button>
+        <button id="demoBtn" class="btn">Use demo data</button>
+      </div>
+    </div>
+
+    <section id="leaderboard" class="view active">
+      <div class="metrics">
+        <article class="metric"><div class="metric-label">Countries competing</div><div id="countriesMetric" class="metric-value">—</div><div class="metric-foot">meeting the participant threshold</div></article>
+        <article class="metric"><div class="metric-label">Active readers</div><div id="readersMetric" class="metric-value">—</div><div class="metric-foot">participating in challenge data</div></article>
+        <article class="metric"><div class="metric-label">Books completed</div><div id="booksMetric" class="metric-value">—</div><div class="metric-foot">across eligible countries</div></article>
+        <article class="metric"><div class="metric-label">Challenge completion</div><div id="completionMetric" class="metric-value">—</div><div class="metric-foot">readers completing all 10 books</div></article>
+      </div>
+
+      <div id="podium" class="podium"></div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div><h2>Country leaderboard</h2><p>Ranked by average points per active reader; completion rate breaks ties.</p></div>
+          <div class="filters">
+            <select id="thresholdSelect" aria-label="Minimum active readers">
+              <option value="1">Min 1 reader</option>
+              <option value="3">Min 3 readers</option>
+              <option value="5" selected>Min 5 readers</option>
+              <option value="10">Min 10 readers</option>
+              <option value="25">Min 25 readers</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Country</th><th>Avg points</th><th>Books</th><th>Active readers</th><th>Completion</th></tr></thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section id="rules" class="view">
+      <div class="rules">
+        <article class="rule-card">
+          <h3>Individual scoring</h3>
+          <p>Readers earn points by completing challenge books. The MVP intentionally stays simple so families can understand it immediately.</p>
+          <div class="formula"><span id="pointsRuleText">10</span> points × books completed, capped at <span id="maxPointsText">100</span></div>
+        </article>
+        <article class="rule-card">
+          <h3>Country scoring</h3>
+          <p>We normalize by active participants, rather than total population, so countries with very different audience sizes can compete fairly.</p>
+          <div class="formula">Country score = total reader points ÷ active readers</div>
+        </article>
+        <article class="rule-card">
+          <h3>Completion rate</h3>
+          <p>The share of active readers who finish all 10 books is displayed as a second measure of team achievement and is used as the tie-breaker.</p>
+          <div class="formula">Finishers ÷ active readers × 100</div>
+        </article>
+        <article class="rule-card">
+          <h3>Eligibility</h3>
+          <p>A minimum active-reader threshold keeps a single reader from making a country appear to dominate the leaderboard. The default prototype threshold is 5.</p>
+          <div class="formula">Eligible when active readers ≥ threshold</div>
+        </article>
+      </div>
+      <div class="settings">
+        <div class="setting"><label>Points per completed book</label><input id="pointsPerBook" type="number" min="1" max="100" value="10"></div>
+        <div class="setting"><label>Maximum reader points</label><input id="maxPoints" type="number" min="10" max="1000" value="100"></div>
+        <div class="setting"><label>Books required to complete challenge</label><input id="booksToComplete" type="number" min="1" max="100" value="10"></div>
+      </div>
+    </section>
+
+    <section id="raw" class="view panel">
+      <div class="raw-controls">
+        <input id="sourceUrl" value="https://www.worldreader.org/challenges-stats/current.json" aria-label="JSON source URL">
+        <button id="rawFetchBtn" class="btn primary">Fetch</button>
+      </div>
+      <div class="discover">
+        <input id="protectedPageUrl" value="https://www.worldreader.org/challenges-stats/" aria-label="Protected stats page URL">
+        <input id="pagePassword" type="password" autocomplete="current-password" placeholder="Stats page password" aria-label="Stats page password">
+        <button id="discoverBtn" class="btn">Discover JSON URL</button>
+        <p class="discover-help">The password stays on this computer. The local server uses it once to open the protected page and look for its JSON feed.</p>
+      </div>
+      <pre id="rawOutput">Loading…</pre>
+    </section>
+  </main>
+
+<script>
+  const state = {
+    raw: null,
+    countries: [],
+    source: 'live',
+    pointsPerBook: 10,
+    maxPoints: 100,
+    booksToComplete: 10,
+    threshold: 5
+  };
+
+  const demo = [
+    {country:'Kenya', code:'KE', activeReaders:428, booksCompleted:3140, finishers:176},
+    {country:'South Africa', code:'ZA', activeReaders:365, booksCompleted:2927, finishers:171},
+    {country:'Ghana', code:'GH', activeReaders:82, booksCompleted:702, finishers:44},
+    {country:'Peru', code:'PE', activeReaders:241, booksCompleted:1815, finishers:91},
+    {country:'Guatemala', code:'GT', activeReaders:157, booksCompleted:1283, finishers:79},
+    {country:'Spain', code:'ES', activeReaders:103, booksCompleted:756, finishers:36},
+    {country:'United States', code:'US', activeReaders:194, booksCompleted:1359, finishers:56},
+    {country:'Mexico', code:'MX', activeReaders:118, booksCompleted:889, finishers:42}
+  ];
+
+  const aliases = {
+    country: ['country','country_name','countryName','name','location','nation'],
+    code: ['code','country_code','countryCode','iso2','iso_2','iso','country_iso'],
+    active: ['activeReaders','active_readers','active_users','activeUsers','participants','readers','users','families','activeChallengeUsers','active_challenge_users'],
+    books: ['booksCompleted','books_completed','completed_books','booksRead','books_read','books','completions','total_books','totalBooks'],
+    finishers: ['finishers','completers','completed_users','completedUsers','challenge_completions','challengeCompletions','users_completed','usersCompleted'],
+    points: ['points','total_points','totalPoints','score','total_score','totalScore'],
+    completionRate: ['completion_rate','completionRate','percent_complete','percentComplete','completion_percentage','completionPercentage']
+  };
+
+  function num(v) {
+    if (v == null || v === '') return null;
+    if (typeof v === 'string') v = v.replace(/[% ,]/g,'');
+    const n = Number(v); return Number.isFinite(n) ? n : null;
+  }
+  function pick(obj, keys) {
+    for (const k of keys) if (Object.prototype.hasOwnProperty.call(obj,k) && obj[k] != null) return obj[k];
+    const lower = Object.fromEntries(Object.keys(obj).map(k=>[k.toLowerCase(),k]));
+    for (const k of keys) { const real = lower[k.toLowerCase()]; if (real && obj[real] != null) return obj[real]; }
+    return null;
+  }
+  function flag(code) {
+    if (!code || typeof code !== 'string' || code.length !== 2) return '🌍';
+    return [...code.toUpperCase()].map(c=>String.fromCodePoint(127397+c.charCodeAt())).join('');
+  }
+  const regionNames = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames(['en'],{type:'region'}) : null;
+  function countryName(code) {
+    if (!code) return 'Unknown';
+    try { return regionNames ? regionNames.of(String(code).toUpperCase()) : String(code).toUpperCase(); }
+    catch { return String(code).toUpperCase(); }
+  }
+  function fmt(n, max=0) { return Number(n||0).toLocaleString(undefined,{maximumFractionDigits:max}); }
+  function pct(n) { return `${Number(n||0).toFixed(1)}%`; }
+
+  function arraysDeep(value, path='$', out=[]) {
+    if (Array.isArray(value)) {
+      if (value.length && value.every(x => x && typeof x === 'object' && !Array.isArray(x))) out.push({path,value});
+      value.forEach((x,i)=>arraysDeep(x,`${path}[${i}]`,out));
+    } else if (value && typeof value === 'object') {
+      Object.entries(value).forEach(([k,v])=>arraysDeep(v,`${path}.${k}`,out));
+    }
+    return out;
+  }
+
+  function candidateScore(arr) {
+    const sample = arr.slice(0,12);
+    let score = 0;
+    for (const o of sample) {
+      if (pick(o,aliases.country) != null) score += 5;
+      if (pick(o,aliases.code) != null) score += 1;
+      if (pick(o,aliases.active) != null) score += 3;
+      if (pick(o,aliases.books) != null) score += 3;
+      if (pick(o,aliases.points) != null) score += 2;
+      if (pick(o,aliases.finishers) != null || pick(o,aliases.completionRate) != null) score += 2;
+    }
+    return score / Math.max(1,sample.length);
+  }
+
+  function normalizeAggregateRows(rows) {
+    return rows.map(o => {
+      const country = pick(o,aliases.country);
+      if (!country) return null;
+      const activeReaders = num(pick(o,aliases.active));
+      const booksCompleted = num(pick(o,aliases.books));
+      const totalPoints = num(pick(o,aliases.points));
+      const completionRateRaw = num(pick(o,aliases.completionRate));
+      let finishers = num(pick(o,aliases.finishers));
+      if (finishers == null && completionRateRaw != null && activeReaders != null) {
+        const r = completionRateRaw > 1 ? completionRateRaw/100 : completionRateRaw;
+        finishers = activeReaders*r;
+      }
+      return { country:String(country), code:String(pick(o,aliases.code)||''), activeReaders, booksCompleted, finishers, totalPoints };
+    }).filter(x => x && (x.activeReaders != null || x.booksCompleted != null || x.totalPoints != null));
+  }
+
+  function normalizeUserRows(rows) {
+    const grouped = new Map();
+    let useful = 0;
+    rows.forEach(o => {
+      const country = pick(o,aliases.country);
+      const books = num(pick(o,aliases.books));
+      if (!country || books == null) return;
+      useful++;
+      const key = String(country);
+      if (!grouped.has(key)) grouped.set(key,{country:key,code:String(pick(o,aliases.code)||''),activeReaders:0,booksCompleted:0,finishers:0,totalPoints:0});
+      const g = grouped.get(key);
+      g.activeReaders++;
+      g.booksCompleted += books;
+      const pts = Math.min(state.maxPoints, books*state.pointsPerBook);
+      g.totalPoints += pts;
+      if (books >= state.booksToComplete) g.finishers++;
+    });
+    return useful >= Math.max(2, rows.length*.25) ? [...grouped.values()] : [];
+  }
+
+  function parseJson(raw) {
+    // Worldreader challenge stats format: totals is keyed by ISO country code.
+    if (raw && raw.totals && typeof raw.totals === 'object' && !Array.isArray(raw.totals)) {
+      const countries = Object.entries(raw.totals).map(([code, values]) => ({
+        country: countryName(code),
+        code: String(code).toUpperCase(),
+        activeReaders: num(values && values.joined),
+        booksCompleted: num(values && values.finishedBook),
+        finishers: num(values && values.completed),
+        finishedTips: num(values && values.finishedTip)
+      })).filter(row => row.activeReaders != null || row.booksCompleted != null);
+      if (countries.length) return {countries,path:'$.totals',mode:'worldreader-current'};
+    }
+    const candidates = arraysDeep(raw).sort((a,b)=>candidateScore(b.value)-candidateScore(a.value));
+    for (const c of candidates) {
+      const agg = normalizeAggregateRows(c.value);
+      if (agg.length >= 2) return {countries:agg,path:c.path,mode:'aggregate'};
+      const users = normalizeUserRows(c.value);
+      if (users.length >= 2) return {countries:users,path:c.path,mode:'users'};
+    }
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+      const objectRows = Object.entries(raw).map(([country,v]) => v && typeof v === 'object' ? ({country,...v}) : null).filter(Boolean);
+      const agg = normalizeAggregateRows(objectRows);
+      if (agg.length >= 2) return {countries:agg,path:'$ (object keys)',mode:'aggregate'};
+    }
+    return {countries:[],path:null,mode:null};
+  }
+
+  function scoredCountries() {
+    return state.countries.map(c => {
+      const active = Math.max(0, num(c.activeReaders) || 0);
+      const books = Math.max(0, num(c.booksCompleted) || 0);
+      const totalPoints = c.totalPoints != null ? Math.max(0,num(c.totalPoints)||0) : Math.min(active*state.maxPoints, books*state.pointsPerBook);
+      const avgPoints = active ? Math.min(state.maxPoints,totalPoints/active) : 0;
+      const finishers = Math.max(0,num(c.finishers)||0);
+      const completionRate = active ? Math.min(100,(finishers/active)*100) : 0;
+      return {...c,activeReaders:active,booksCompleted:books,totalPoints,avgPoints,finishers,completionRate};
+    }).filter(c=>c.activeReaders >= state.threshold)
+      .sort((a,b)=> b.avgPoints-a.avgPoints || b.completionRate-a.completionRate || b.booksCompleted-a.booksCompleted);
+  }
+
+  function render() {
+    const rows = scoredCountries();
+    const totalReaders = rows.reduce((s,c)=>s+c.activeReaders,0);
+    const totalBooks = rows.reduce((s,c)=>s+c.booksCompleted,0);
+    const totalFinishers = rows.reduce((s,c)=>s+c.finishers,0);
+    document.getElementById('countriesMetric').textContent = fmt(rows.length);
+    document.getElementById('readersMetric').textContent = fmt(totalReaders);
+    document.getElementById('booksMetric').textContent = fmt(totalBooks);
+    document.getElementById('completionMetric').textContent = totalReaders ? pct(totalFinishers/totalReaders*100) : '—';
+
+    const order = [1,0,2];
+    const classes = ['second','first','third'];
+    const labels = ['2','1','3'];
+    const podium = document.getElementById('podium');
+    podium.innerHTML = '';
+    order.forEach((idx,pos) => {
+      const c = rows[idx];
+      const card = document.createElement('article');
+      card.className = `podium-card ${classes[pos]}`;
+      card.innerHTML = c ? `<div class="place">${labels[pos]}</div><div class="podium-country"><div class="flag">${flag(c.code)}</div><div><div class="country-name">${escapeHtml(c.country)}</div><div class="country-code">${escapeHtml(c.code||'')}</div></div></div><div class="score-big">${c.avgPoints.toFixed(1)} <span>avg points / reader</span></div>` : `<div class="place">${labels[pos]}</div><div class="muted" style="margin-top:38px">Waiting for an eligible country…</div>`;
+      podium.appendChild(card);
+    });
+
+    const tbody = document.getElementById('leaderboardBody');
+    tbody.innerHTML = rows.map((c,i)=>`<tr>
+      <td class="rank">${i+1}</td>
+      <td><div class="country-cell"><span class="flag">${flag(c.code)}</span><span>${escapeHtml(c.country)}</span></div></td>
+      <td><span class="bar"><i style="width:${Math.max(2,c.avgPoints/state.maxPoints*100)}%"></i></span><strong>${c.avgPoints.toFixed(1)}</strong></td>
+      <td>${fmt(c.booksCompleted)}</td><td>${fmt(c.activeReaders)}</td><td class="positive">${pct(c.completionRate)}</td>
+    </tr>`).join('') || `<tr><td colspan="6" class="muted">No eligible country rows could be derived from this data yet. Open “Raw data” to inspect the feed.</td></tr>`;
+
+    document.getElementById('pointsRuleText').textContent = state.pointsPerBook;
+    document.getElementById('maxPointsText').textContent = state.maxPoints;
+  }
+
+  function escapeHtml(s) { return String(s ?? '').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch])); }
+  function setStatus(kind,text) {
+    const dot=document.getElementById('statusDot'); dot.className='dot'+(kind?` ${kind}`:'');
+    document.getElementById('statusText').textContent=text;
+  }
+  function notice(text='') {
+    const el=document.getElementById('notice'); el.textContent=text; el.classList.toggle('show',!!text);
+  }
+
+  async function fetchLive() {
+    const url=document.getElementById('sourceUrl').value.trim();
+    setStatus('', 'Connecting to live challenge data…'); notice('');
+    document.getElementById('refreshBtn').disabled=true;
+    try {
+      const response=await fetch('/api/fetch?url='+encodeURIComponent(url),{cache:'no-store'});
+      const result=await response.json();
+      if (!response.ok || result.error) throw new Error(result.error || `HTTP ${response.status}`);
+      state.raw=result.data; state.source='live';
+      document.getElementById('rawOutput').textContent=JSON.stringify(result.data,null,2);
+      const parsed=parseJson(result.data); state.countries=parsed.countries;
+      if (!state.countries.length) {
+        setStatus('error','Live JSON loaded; country fields need mapping');
+        notice('The JSON loaded successfully, but this prototype could not automatically identify the country / reader / book fields. The Raw data tab shows the response so we can map it precisely.');
+      } else {
+        const sourceUpdated = result.data.lastUpdatedAt ? new Date(result.data.lastUpdatedAt) : new Date(result.fetchedAt);
+        setStatus('live',`Live • ${state.countries.length} countries • updated ${sourceUpdated.toLocaleString()}`);
+        notice(parsed.mode === 'worldreader-current'
+          ? `Worldreader data mapped from ${parsed.path}: joined → active readers, finishedBook → books, completed → finishers.`
+          : (parsed.path ? `Live data detected at ${parsed.path}. Automatic field mapping is active for this prototype.` : ''));
+      }
+      render();
+    } catch(err) {
+      setStatus('error','Live feed unavailable — showing demo');
+      notice(`Could not load current.json (${err.message}). Demo data is being shown so the game remains usable.`);
+      useDemo(false);
+    } finally { document.getElementById('refreshBtn').disabled=false; }
+  }
+
+  async function discoverJsonUrl() {
+    const button=document.getElementById('discoverBtn');
+    button.disabled=true; notice('Opening the protected stats page and looking for its data feed…');
+    try {
+      const response=await fetch('/api/discover',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        pageUrl:document.getElementById('protectedPageUrl').value.trim(),
+        password:document.getElementById('pagePassword').value
+      })});
+      const result=await response.json();
+      if (!response.ok) {
+        document.getElementById('rawOutput').textContent=JSON.stringify(result,null,2);
+        throw new Error(result.error || `HTTP ${response.status}`);
+      }
+      const chosen=result.candidates.find(x=>/current\.json(?:\?|$)/i.test(x)) || result.candidates[0];
+      document.getElementById('sourceUrl').value=chosen;
+      document.getElementById('rawOutput').textContent=JSON.stringify(result,null,2);
+      notice(`Found ${result.candidates.length} JSON URL${result.candidates.length===1?'':'s'}. Trying ${chosen}`);
+      await fetchLive();
+    } catch(err) {
+      setStatus('error','JSON feed not found');
+      notice(err.message);
+    } finally {
+      document.getElementById('pagePassword').value='';
+      button.disabled=false;
+    }
+  }
+
+  function useDemo(showNotice=true) {
+    state.source='demo'; state.raw=demo; state.countries=demo.map(x=>({...x}));
+    document.getElementById('rawOutput').textContent=JSON.stringify(demo,null,2);
+    if (showNotice) notice('Demo data is active. Click “Refresh live data” to reconnect to current.json.');
+    setStatus('', 'Demo mode'); render();
+  }
+
+  document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===btn));
+    document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===btn.dataset.view));
+  }));
+  document.getElementById('refreshBtn').addEventListener('click',fetchLive);
+  document.getElementById('rawFetchBtn').addEventListener('click',fetchLive);
+  document.getElementById('discoverBtn').addEventListener('click',discoverJsonUrl);
+  document.getElementById('demoBtn').addEventListener('click',()=>useDemo(true));
+  document.getElementById('thresholdSelect').addEventListener('change',e=>{state.threshold=Number(e.target.value);render();});
+  document.getElementById('pointsPerBook').addEventListener('change',e=>{state.pointsPerBook=Math.max(1,Number(e.target.value)||10); if(state.source==='live'&&state.raw){const p=parseJson(state.raw);state.countries=p.countries;} render();});
+  document.getElementById('maxPoints').addEventListener('change',e=>{state.maxPoints=Math.max(1,Number(e.target.value)||100); if(state.source==='live'&&state.raw){const p=parseJson(state.raw);state.countries=p.countries;} render();});
+  document.getElementById('booksToComplete').addEventListener('change',e=>{state.booksToComplete=Math.max(1,Number(e.target.value)||10); if(state.source==='live'&&state.raw){const p=parseJson(state.raw);state.countries=p.countries;} render();});
+
+  fetchLive();
+</script>
+</body>
+</html>

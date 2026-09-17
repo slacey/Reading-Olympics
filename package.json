@@ -1,0 +1,13 @@
+{
+  "name": "worldreader-json-viewer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local viewer/proxy for Worldreader challenge stats JSON",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
